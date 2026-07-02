@@ -1,0 +1,27 @@
+{
+  "name": "conditional-payment-agent",
+  "version": "0.1.0",
+  "description": "Conditional Payment Agent — an autonomous IFTTT-for-P2P-money agent on Unicity Testnet v2 (Unicity Builder Program, Track 01).",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "agent": "tsx scripts/run-agent.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@unicitylabs/sphere-sdk": "latest",
+    "dotenv": "^16.4.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

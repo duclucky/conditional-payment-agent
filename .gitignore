@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment — never commit secrets/config
+.env
+.env.local
+
+# SDK-persisted wallet + token data (per-address, network-scoped)
+data/
+tokens/
+*.mnemonic
+
+# User state persisted by the agent
+store/
+*.log
+
+# Reference clones (read-only, not part of this repo)
+reference/
+
+# Claude Code local session/task bookkeeping — tool-local state, not project source
+.claude/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
