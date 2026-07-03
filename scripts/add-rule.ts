@@ -6,19 +6,107 @@ import type { NewRuleInput } from '../src/rules/store.js';
 import { initWallet, peekNametag } from '../src/wallet/init.js';
 
 const SCOPE = 'add-rule';
-const PRESETS = ['forward-normal', 'forward-oversized', 'split-with-invalid-leg', 'notify-on-incoming', 'balance-above'] as const;
+
+// Ducky demo presets (branded destination nametags — see scripts/create-destination.ts — open to
+// ANY sender, not a fixed test counterparty, since these are meant for a real external reviewer
+// to trigger). Unlike the presets below, these need no wallet/TokenRegistry lookup at all: the
+// coinId is a well-known constant already used throughout this project (CLAUDE.md, rules.json,
+// every prior phase report), so adding one of these is pure filesystem I/O on rules.json.
+const DUCKY_PRESETS = ['notify-incoming', 'forward-fee', 'split-departments', 'conditional-forward', 'balance-watch'] as const;
+const UCT_COIN_ID = 'f581d30f593e4b369d684a4563b5246f07b1d265f7178a2c0a82b81f39c24dc0';
+
+const PRESETS = ['forward-normal', 'forward-oversized', 'split-with-invalid-leg', 'notify-on-incoming', 'balance-above', ...DUCKY_PRESETS] as const;
 type Preset = (typeof PRESETS)[number];
+
+function isDuckyPreset(preset: Preset): preset is (typeof DUCKY_PRESETS)[number] {
+  return (DUCKY_PRESETS as readonly string[]).includes(preset);
+}
 
 function parseArgs(): { preset: Preset; arg?: string } {
   const [presetArg, extra] = process.argv.slice(2);
   if (!PRESETS.includes(presetArg as Preset)) {
-    throw new Error(`Usage: tsx scripts/add-rule.ts <${PRESETS.join('|')}> [arg]\n  balance-above takes a threshold in whole UCT, e.g.: balance-above 1`);
+    throw new Error(
+      `Usage: tsx scripts/add-rule.ts <${PRESETS.join('|')}> [arg]\n` +
+        '  balance-above takes a threshold in whole UCT, e.g.: balance-above 1\n' +
+        '  balance-watch takes an optional threshold in whole UCT, default 15, e.g.: balance-watch 20',
+    );
   }
   return { preset: presetArg as Preset, arg: extra };
 }
 
+function uctAmount(whole: string): string {
+  return parseTokenAmount(whole, 18).toString();
+}
+
+/**
+ * The 5 fixed demo rules for the @ducky-* branded destination wallets. All ship `enabled: false`
+ * — a reviewer opts each one in via the dashboard, they never fire on their own after seeding.
+ */
+function buildDuckyRule(preset: (typeof DUCKY_PRESETS)[number], arg: string | undefined): NewRuleInput {
+  switch (preset) {
+    case 'notify-incoming':
+      return {
+        enabled: false,
+        trigger: { type: 'onIncoming', minIncoming: uctAmount('1') },
+        action: { type: 'notify', to: '@ducky-alerts', message: 'Agent detected an incoming transfer' },
+        guards: { minAmount: uctAmount('1') },
+      };
+    case 'forward-fee':
+      return {
+        enabled: false,
+        trigger: { type: 'onIncoming', minIncoming: uctAmount('1') },
+        action: { type: 'forward', to: '@ducky-fee', percent: 10, coinId: UCT_COIN_ID },
+        guards: { minAmount: uctAmount('1') },
+      };
+    case 'split-departments':
+      return {
+        enabled: false,
+        trigger: { type: 'onIncoming', minIncoming: uctAmount('1') },
+        action: {
+          type: 'split',
+          coinId: UCT_COIN_ID,
+          splits: [
+            { to: '@ducky-savings', percent: 50 },
+            { to: '@ducky-ops', percent: 30 },
+            { to: '@ducky-charity', percent: 20 },
+          ],
+        },
+        guards: { minAmount: uctAmount('1') },
+      };
+    case 'conditional-forward':
+      // Only fires on incoming >= 5 UCT — same event below that threshold matches nothing here,
+      // so a reviewer can demo both "too small, no reaction" and "big enough, forwards" paths.
+      return {
+        enabled: false,
+        trigger: { type: 'onIncoming', minIncoming: uctAmount('5') },
+        action: { type: 'forward', to: '@ducky-savings', percent: 100, coinId: UCT_COIN_ID },
+        guards: { minAmount: uctAmount('5') },
+      };
+    case 'balance-watch': {
+      const threshold = arg ?? '15';
+      return {
+        enabled: false,
+        trigger: { type: 'onBalanceAbove', threshold: uctAmount(threshold), coinId: UCT_COIN_ID },
+        action: { type: 'notify', to: '@ducky-alerts', message: 'Agent balance exceeded threshold' },
+        // Level-triggered (re-checked every Scheduler tick while true) — cooldown avoids spam,
+        // matching the existing balance-above preset's already-proven pattern.
+        guards: { cooldownSeconds: 60 },
+      };
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const { preset, arg } = parseArgs();
+  const store = await RuleStore.load();
+
+  if (isDuckyPreset(preset)) {
+    const input = buildDuckyRule(preset, arg);
+    const rule = await store.add(input);
+    log.info(SCOPE, `added rule ${rule.id} (${preset}): ${JSON.stringify(rule, null, 2)}`);
+    process.exit(0);
+  }
+
   const config = loadConfig();
 
   // Ensure the partner wallet exists (idempotent: loads if already created) — it's the forward
@@ -38,8 +126,6 @@ async function main(): Promise<void> {
   if (!ready) log.warn(SCOPE, 'TokenRegistry did not report ready within timeout — coinId lookup below may be unreliable');
   const coinId = getCoinIdBySymbol('UCT');
   if (!coinId) throw new Error("getCoinIdBySymbol('UCT') returned undefined — run scripts/mint.ts to investigate first");
-
-  const store = await RuleStore.load();
 
   let input: NewRuleInput;
   if (preset === 'forward-normal') {

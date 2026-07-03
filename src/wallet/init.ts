@@ -18,6 +18,10 @@ export interface WalletRole {
   readonly name: string;
   /** Nametag prefix; a random suffix is generated once and persisted alongside the wallet. */
   readonly nametagPrefix: string;
+  /** When set, register EXACTLY this nametag instead of ensureNametag's random-candidate flow —
+   * used for branded destination wallets (scripts/create-destination.ts). Never falls back to a
+   * different name on collision; the caller must pick one that's free. */
+  readonly exactNametag?: string;
 }
 
 export interface WalletHandle {
@@ -49,6 +53,22 @@ export function parseRoleArg(value: string | undefined, usage: string): string {
     throw new Error(`${usage}\nGot role: "${value ?? ''}" — must match ${ROLE_NAME_PATTERN} (e.g. "agent", "counterparty", "partner").`);
   }
   return value;
+}
+
+/**
+ * Validate a user-chosen nametag (e.g. for scripts/create-destination.ts) before it's used both
+ * as a network nametag AND as a `data/<nametag>` / `tokens/<nametag>` directory segment. Reuses
+ * the same pattern already enforced for auto-generated candidates (README: Unicity IDs are
+ * lowercase alphanumeric with _ or -, 3-20 chars) — anchored, so a passing value can never
+ * contain '/' or '..' and is safe as a path segment too.
+ */
+export function validateNametagFormat(nametag: string): void {
+  if (!NAMETAG_PATTERN.test(nametag)) {
+    throw new Error(
+      `"${nametag}" is not a valid Unicity nametag — must be lowercase alphanumeric with _ or -, ` +
+        `3-20 chars total (got ${nametag.length} chars).`,
+    );
+  }
 }
 
 function generateNametagCandidate(prefix: string): string {
@@ -95,6 +115,27 @@ async function ensureNametag(
   }
   log.error(roleName, `could not register a nametag after ${NAMETAG_REGISTER_ATTEMPTS} attempts — continuing without one (DIRECT:// address still works)`);
   return undefined;
+}
+
+/**
+ * Register a SPECIFIC nametag rather than a randomly generated one, used for branded destination
+ * wallets (scripts/create-destination.ts). Unlike `ensureNametag`, this NEVER substitutes a
+ * different candidate on collision — the entire point is registering the exact requested name, so
+ * a collision must stop and be reported, never silently swapped for something else.
+ */
+async function registerExactNametag(sphere: Sphere, nametag: string, roleName: string): Promise<string> {
+  const existing = sphere.identity?.nametag;
+  if (existing === nametag) return existing; // idempotent re-run of this same script
+  if (existing) {
+    throw new Error(`Wallet already has nametag "@${existing}" registered — cannot also register "@${nametag}" (one wallet, one nametag).`);
+  }
+  const available = await sphere.isNametagAvailable(nametag);
+  if (!available) {
+    throw new Error(`Nametag "@${nametag}" is already taken on testnet2 — choose a different one. Refusing to overwrite someone else's registration.`);
+  }
+  await sphere.registerNametag(nametag);
+  log.info(roleName, `registered nametag "@${nametag}"`);
+  return nametag;
 }
 
 /**
@@ -171,7 +212,9 @@ export async function initWallet(role: WalletRole, config: AppConfig): Promise<W
 
   const nametag = useExistingMnemonic
     ? resolveExistingNametag(sphere, role.name)
-    : await ensureNametag(sphere, local, identityPath, role.name, role.nametagPrefix);
+    : role.exactNametag
+      ? await registerExactNametag(sphere, role.exactNametag, role.name)
+      : await ensureNametag(sphere, local, identityPath, role.name, role.nametagPrefix);
 
   if (useExistingMnemonic) {
     log.info(
