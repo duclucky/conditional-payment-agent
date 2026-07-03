@@ -81,7 +81,8 @@ shown in the log; no specific deep-link URL format is asserted here).
 
 ## Live dashboard
 
-`TODO — filled in after VPS deployment.`
+- Dashboard URL: http://103.167.88.212:8787
+- Agent nametag: `@cpa-agent-8ca7ff`
 
 ## Rules supported
 
