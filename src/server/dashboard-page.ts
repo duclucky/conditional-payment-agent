@@ -8,7 +8,7 @@ export const DASHBOARD_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Conditional Payment Agent — Dashboard</title>
+<title>Ducky — Autonomous Payment Agent</title>
 <style>
   :root {
     color-scheme: dark;
@@ -21,6 +21,8 @@ export const DASHBOARD_HTML = `<!doctype html>
     --accent-green: #3fb950;
     --accent-yellow: #d29922;
     --accent-red: #f85149;
+    --brand-yellow: #f5b301;
+    --brand-yellow-soft: #2b2210;
   }
   * { box-sizing: border-box; }
   body {
@@ -45,8 +47,9 @@ export const DASHBOARD_HTML = `<!doctype html>
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     margin: 0;
+    color: var(--brand-yellow);
   }
   .subtitle {
     margin: 0.4rem 0 0;
@@ -74,11 +77,36 @@ export const DASHBOARD_HTML = `<!doctype html>
     margin: 2rem 0 0.75rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border);
-    color: var(--text);
+    color: var(--brand-yellow);
   }
 
   a { color: var(--accent-blue); text-decoration: none; }
   a:hover { text-decoration: underline; }
+
+  /* Friendly explainer cards: intro, how-to-test, plain-language rules — visually distinct from
+     the plain technical panels (#identity, table, log) via the warm yellow left border. */
+  .friendly-card {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--brand-yellow);
+    border-radius: 6px; padding: 1rem 1.25rem; margin: 1.25rem 0; max-width: 900px;
+  }
+  .friendly-card h2 {
+    margin: 0 0 0.5rem; padding: 0; border-bottom: none;
+    font-size: 1rem; color: var(--brand-yellow);
+  }
+  .friendly-card p { margin: 0; color: var(--text); font-size: 0.85rem; line-height: 1.7; }
+  .friendly-card ol { margin: 0; padding-left: 1.25rem; }
+  .friendly-card li { color: var(--text); font-size: 0.85rem; line-height: 1.7; margin-bottom: 0.4rem; }
+  .friendly-card li:last-child { margin-bottom: 0; }
+  .friendly-card strong { color: var(--brand-yellow); }
+
+  .rules-explainer {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--brand-yellow);
+    border-radius: 6px; padding: 1rem 1.25rem; margin: 0.75rem 0 1.25rem; max-width: 900px;
+  }
+  .rules-explainer ol { margin: 0; padding-left: 1.25rem; }
+  .rules-explainer li { font-size: 0.85rem; line-height: 1.7; margin-bottom: 0.35rem; }
+  .rules-explainer li:last-child { margin-bottom: 0; }
+  .rules-explainer strong { color: var(--brand-yellow); }
 
   #identity {
     display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem;
@@ -90,11 +118,11 @@ export const DASHBOARD_HTML = `<!doctype html>
   #identity .v { word-break: break-all; }
 
   button.copy {
-    font: inherit; background: var(--border); color: var(--text); border: 1px solid #30363d;
+    font: inherit; background: var(--surface); color: var(--brand-yellow); border: 1px solid #4a3a12;
     border-radius: 4px; padding: 0.05rem 0.5rem; margin-left: 0.5rem; cursor: pointer; font-size: 0.72rem;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
   }
-  button.copy:hover { background: #30363d; }
+  button.copy:hover { background: var(--brand-yellow-soft); border-color: var(--brand-yellow); }
 
   table { border-collapse: collapse; width: 100%; max-width: 1200px; }
   thead { background: var(--surface); }
@@ -162,21 +190,43 @@ export const DASHBOARD_HTML = `<!doctype html>
 </head>
 <body>
   <header class="app-header">
-    <h1>Conditional Payment Agent<span class="live-badge">LIVE</span></h1>
-    <p class="subtitle">Unicity Testnet v2 · Track 01 — Autonomous Agents</p>
+    <h1>Ducky 🦆<span class="live-badge">LIVE</span></h1>
+    <p class="subtitle">Autonomous Payment Agent · Unicity Testnet v2 · Track 01</p>
   </header>
+
+  <section class="friendly-card">
+    <h2>What is Ducky?</h2>
+    <p>
+      Ducky is an autonomous agent that watches every payment it receives and reacts on its own,
+      following whatever rules you switch on below — forwarding a share, splitting funds across
+      multiple wallets, or sending an alert. Nobody clicks "approve" for each transfer; Ducky
+      decides and acts by itself. This is a real agent running on Unicity Testnet v2 — money
+      genuinely moves when a rule fires.
+    </p>
+  </section>
 
   <div id="identity">Loading agent identity…</div>
 
-  <p class="note">
-    Reviewer test: send any amount to the nametag or direct address above from another Sphere
-    wallet on <strong>testnet2</strong>, then watch the log below react within seconds. Cross-check
-    the resulting transfer independently on the
-    <a href="https://unicity.network" target="_blank" rel="noopener">Unicity Network Explorer</a>
-    (paste the nametag / address / tx id there — no deep link is asserted here).
-  </p>
+  <section class="friendly-card">
+    <h2>How to test Ducky</h2>
+    <ol>
+      <li>Turn on a rule you want to see (toggle the <strong>ON</strong> switch in the table below).</li>
+      <li>From your Sphere testnet2 wallet, send UCT to <strong>@ducky</strong> (copy button above).</li>
+      <li>Watch the "Live activity log" below — Ducky reacts within seconds.</li>
+      <li>Cross-check the transaction on the <a href="https://unicity.network" target="_blank" rel="noopener">Unicity Network Explorer</a>.</li>
+    </ol>
+  </section>
 
   <h2>Rules</h2>
+  <section class="rules-explainer">
+    <ol>
+      <li><strong>Notify</strong> — When someone sends money, Ducky instantly alerts the team.</li>
+      <li><strong>Auto-fee</strong> — Ducky automatically takes 10% of each incoming payment to a fee wallet.</li>
+      <li><strong>Split</strong> — Ducky divides each payment across three funds: 50% savings, 30% operations, 20% charity.</li>
+      <li><strong>Conditional</strong> — Only payments of 5 UCT or more get moved entirely to savings.</li>
+      <li><strong>Balance watch</strong> — When Ducky's balance passes 15 UCT, it raises an alert.</li>
+    </ol>
+  </section>
   <table id="rules-table">
     <thead>
       <tr>
