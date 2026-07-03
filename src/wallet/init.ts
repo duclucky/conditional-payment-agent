@@ -97,6 +97,29 @@ async function ensureNametag(
   return undefined;
 }
 
+/**
+ * Resolve-only counterpart to `ensureNametag`, used when the wallet was restored from an existing
+ * mnemonic (AGENT_MNEMONIC) rather than auto-generated. Verified empirically (2026-07, disposable
+ * test wallet): after `Sphere.init({ mnemonic, ... })`, `sphere.identity.nametag` already comes
+ * back populated with the previously-registered nametag for that identity — no extra option
+ * needed. This function NEVER falls through to generating/registering a new nametag: an existing
+ * branded identity must not get a second nametag squatted on top of it just because resolution
+ * was momentarily unavailable (e.g. Nostr relay lag). If nothing resolves, it logs loudly and
+ * returns undefined — the wallet still works via its DIRECT:// address.
+ */
+function resolveExistingNametag(sphere: Sphere, roleName: string): string | undefined {
+  const nametag = sphere.identity?.nametag;
+  if (nametag) return nametag;
+  log.error(
+    roleName,
+    'AGENT_MNEMONIC was provided but no nametag resolved for this identity — continuing with the ' +
+      'DIRECT:// address only. If this wallet is expected to already have a registered nametag, ' +
+      'double-check the mnemonic and Nostr relay propagation. This will NOT auto-register a new ' +
+      'nametag on top of an existing identity.',
+  );
+  return undefined;
+}
+
 export async function initWallet(role: WalletRole, config: AppConfig): Promise<WalletHandle> {
   const dataDir = join('data', role.name);
   const tokensDir = join('tokens', role.name);
@@ -124,23 +147,38 @@ export async function initWallet(role: WalletRole, config: AppConfig): Promise<W
     deviceId: local.deviceId,
   });
 
+  // Only the 'agent' role can load from an existing mnemonic — counterparty/partner are always
+  // disposable local test wallets (CLAUDE.md scope) and always autoGenerate.
+  const useExistingMnemonic = role.name === 'agent' && !!config.agentMnemonic;
+
   const { sphere, created, generatedMnemonic } = await Sphere.init({
     ...base,
     delivery,
     walletApi,
-    autoGenerate: true,
+    ...(useExistingMnemonic ? { mnemonic: config.agentMnemonic } : { autoGenerate: true }),
     // Despite the .d.ts marking this "informational only" (config comes from provider URLs),
     // Sphere.init throws SphereError('network is required to configure the TokenRegistry')
     // at runtime without it — confirmed by actually running this, not by reading types alone.
     network: 'testnet2',
   });
 
-  if (created && generatedMnemonic) {
+  if (useExistingMnemonic) {
+    log.info(role.name, 'loaded existing wallet from AGENT_MNEMONIC (not a new wallet)');
+  } else if (created && generatedMnemonic) {
     log.warn(role.name, '=== NEW WALLET CREATED — SAVE THIS RECOVERY PHRASE NOW (shown once) ===');
     log.warn(role.name, generatedMnemonic);
   }
 
-  const nametag = await ensureNametag(sphere, local, identityPath, role.name, role.nametagPrefix);
+  const nametag = useExistingMnemonic
+    ? resolveExistingNametag(sphere, role.name)
+    : await ensureNametag(sphere, local, identityPath, role.name, role.nametagPrefix);
+
+  if (useExistingMnemonic) {
+    log.info(
+      role.name,
+      `resolved identity: nametag=${nametag ? '@' + nametag : '(none)'} directAddress=${sphere.identity?.directAddress ?? '(unknown)'} chainPubkey=${sphere.identity?.chainPubkey ?? '(unknown)'}`,
+    );
+  }
 
   return { sphere, created, generatedMnemonic, nametag, deviceId: local.deviceId, dataDir, tokensDir, release: lock.release };
 }

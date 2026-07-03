@@ -6,6 +6,10 @@ export interface AppConfig {
   readonly walletApiBaseUrl: string;
   readonly dashboardPort: number;
   readonly dashboardHost: string;
+  /** BIP39 mnemonic for an EXISTING agent wallet (branded nametag + real tokens). Optional —
+   * when absent, the agent wallet auto-generates a brand-new mnemonic as before. Only ever
+   * applies to the 'agent' role (see src/wallet/init.ts) — never commit a real value. */
+  readonly agentMnemonic: string | undefined;
 }
 
 function requireEnv(name: string): string {
@@ -27,6 +31,10 @@ export function loadConfig(): AppConfig {
     // to the user, not guessed at here (see PHASE4_REPORT.md TODOs).
     dashboardPort: Number(process.env.DASHBOARD_PORT) || 8787,
     dashboardHost: process.env.DASHBOARD_HOST ?? '127.0.0.1',
+    agentMnemonic: (() => {
+      const raw = process.env.AGENT_MNEMONIC?.trim();
+      return raw ? raw : undefined;
+    })(),
   };
 }
 
