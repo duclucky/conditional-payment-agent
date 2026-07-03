@@ -43,6 +43,13 @@ export const DASHBOARD_HTML = `<!doctype html>
     padding-bottom: 1.25rem;
     margin-bottom: 1.5rem;
   }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
   .app-header h1 {
     display: flex;
     align-items: center;
@@ -56,6 +63,20 @@ export const DASHBOARD_HTML = `<!doctype html>
     color: var(--text-muted);
     font-size: 0.8rem;
   }
+  .oss-note {
+    margin: 0.5rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+  .github-link {
+    display: inline-flex; align-items: center; gap: 0.3rem; flex-shrink: 0;
+    border: 1px solid var(--brand-yellow); color: var(--brand-yellow);
+    border-radius: 6px; padding: 0.35rem 0.85rem; font-size: 0.78rem; font-weight: 600;
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .github-link:hover { background: var(--brand-yellow); color: var(--bg); text-decoration: none; }
+  a.repo-link { color: var(--brand-yellow); font-weight: 600; }
 
   @keyframes pulse {
     0%, 100% { opacity: 1; }
@@ -190,8 +211,15 @@ export const DASHBOARD_HTML = `<!doctype html>
 </head>
 <body>
   <header class="app-header">
-    <h1>Ducky 🦆<span class="live-badge">LIVE</span></h1>
+    <div class="header-top">
+      <h1>Ducky 🦆<span class="live-badge">LIVE</span></h1>
+      <a class="github-link" href="https://github.com/duclucky/conditional-payment-agent" target="_blank" rel="noopener">View on GitHub →</a>
+    </div>
     <p class="subtitle">Autonomous Payment Agent · Unicity Testnet v2 · Track 01</p>
+    <p class="oss-note">
+      Ducky is an open-source, self-hosted autonomous payment agent. This dashboard is a live
+      instance — <a class="repo-link" href="https://github.com/duclucky/conditional-payment-agent" target="_blank" rel="noopener">clone the repo</a> to run your own.
+    </p>
   </header>
 
   <section class="friendly-card">
@@ -247,6 +275,10 @@ export const DASHBOARD_HTML = `<!doctype html>
       This dashboard only reads agent state and flips the enabled/disabled bit on existing rules —
       it cannot create rules, move funds, or reveal wallet secrets (mnemonic / oracle API key are
       never sent to this page).
+    </p>
+    <p class="note">
+      Want to run your own Ducky? Full setup instructions in the
+      <a class="repo-link" href="https://github.com/duclucky/conditional-payment-agent" target="_blank" rel="noopener">README →</a>
     </p>
   </footer>
 
