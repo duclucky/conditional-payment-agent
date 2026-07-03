@@ -213,7 +213,7 @@ export const DASHBOARD_HTML = `<!doctype html>
       <li>Turn on a rule you want to see (toggle the <strong>ON</strong> switch in the table below).</li>
       <li>From your Sphere testnet2 wallet, send UCT to <strong>@ducky</strong> (copy button above).</li>
       <li>Watch the "Live activity log" below — Ducky reacts within seconds.</li>
-      <li>Cross-check the transaction on the <a href="https://unicity.network" target="_blank" rel="noopener">Unicity Network Explorer</a>.</li>
+      <li>Confirm it worked: check that the destination wallet's balance increased, and note the transfer ID shown in the log. Unicity token transfers are private, off-chain bearer objects — there's no public block explorer to look them up on (unlike Ethereum) — so the live log and the balance change are the real proof that a real transfer happened on Unicity Testnet v2.</li>
     </ol>
   </section>
 
