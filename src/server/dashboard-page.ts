@@ -10,57 +10,161 @@ export const DASHBOARD_HTML = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Conditional Payment Agent — Dashboard</title>
 <style>
-  :root { color-scheme: light dark; }
+  :root {
+    color-scheme: dark;
+    --bg: #080b10;
+    --surface: #0d1117;
+    --border: #21262d;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --accent-blue: #388bfd;
+    --accent-green: #3fb950;
+    --accent-yellow: #d29922;
+    --accent-red: #f85149;
+  }
   * { box-sizing: border-box; }
   body {
     font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
-    margin: 0; padding: 1.25rem 1.5rem 3rem;
-    background: #0f1115; color: #e6e6e6;
-    font-size: 14px; line-height: 1.5;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.6;
   }
-  h1 { font-size: 1.25rem; margin: 0 0 0.75rem; }
-  h2 { font-size: 1rem; margin: 1.5rem 0 0.5rem; color: #9fb4c7; }
-  a { color: #6cb6ff; }
+
+  .app-header {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .app-header h1 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 1.25rem;
+    margin: 0;
+  }
+  .subtitle {
+    margin: 0.4rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: #0d2119; border: 1px solid #1a4731; border-radius: 999px;
+    padding: 0.15rem 0.65rem; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
+    color: var(--accent-green);
+    vertical-align: middle; margin-left: 0.75rem;
+  }
+  .live-badge::before {
+    content: '●'; animation: pulse 2s ease-in-out infinite;
+  }
+
+  h2 {
+    font-size: 0.95rem; font-weight: 600;
+    margin: 2rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  a { color: var(--accent-blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
   #identity {
-    display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 0.75rem;
-    background: #171a21; border: 1px solid #262b36; border-radius: 8px;
-    padding: 0.75rem 1rem; max-width: 900px;
+    display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 1rem 1.25rem; max-width: 900px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   }
-  #identity .k { color: #8a93a3; }
+  #identity .k { color: var(--text-muted); font-size: 0.82rem; padding-top: 0.1rem; }
   #identity .v { word-break: break-all; }
+
   button.copy {
-    font: inherit; background: #262b36; color: #cfd6e2; border: 1px solid #333a48;
-    border-radius: 4px; padding: 0 0.4rem; margin-left: 0.4rem; cursor: pointer; font-size: 0.75rem;
+    font: inherit; background: var(--border); color: var(--text); border: 1px solid #30363d;
+    border-radius: 4px; padding: 0.05rem 0.5rem; margin-left: 0.5rem; cursor: pointer; font-size: 0.72rem;
+    transition: background 0.15s ease;
   }
-  button.copy:hover { background: #333a48; }
-  table { border-collapse: collapse; width: 100%; max-width: 1100px; }
-  th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #262b36; vertical-align: top; }
-  th { color: #8a93a3; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  button.copy:hover { background: #30363d; }
+
+  table { border-collapse: collapse; width: 100%; max-width: 1200px; }
+  thead { background: var(--surface); }
+  th, td { text-align: left; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--text-muted); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  tbody tr { transition: background 0.1s ease; }
+  tbody tr:hover { background: #161b22; }
   tr.disabled td { opacity: 0.5; }
+
+  #rules-body td[colspan] {
+    text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;
+  }
+  #rules-body td[colspan]::before {
+    content: '◌  '; opacity: 0.6;
+  }
+
   .pill {
-    display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.75rem;
-    background: #22303c; color: #7fd0a8; border: 1px solid #2c4536;
+    display: inline-block; padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.72rem;
+    font-weight: 500; letter-spacing: 0.02em;
+    background: #0d2119; color: var(--accent-green); border: 1px solid #1a4731;
   }
-  .pill.off { background: #302222; color: #d08a7f; border-color: #452c2c; }
-  .mono-dim { color: #8a93a3; font-size: 0.85em; }
-  .toggle-label { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+  .pill.off { background: #2d1214; color: var(--accent-red); border-color: #4c1e21; }
+
+  .toggle-label {
+    display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; position: relative;
+  }
+  .toggle-label input.rule-toggle {
+    position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; padding: 0;
+  }
+  .toggle-label:hover .pill { filter: brightness(1.25); }
+
+  .mono-dim { color: var(--text-muted); font-size: 0.85em; }
+
+  .log-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 2rem;
+  }
+  .log-header h2 { margin: 0; padding: 0; border-bottom: none; }
+  #log-status {
+    font-size: 0.72rem; color: var(--text-muted);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 0.15rem 0.65rem;
+  }
+
   #log-panel {
-    background: #05070a; border: 1px solid #262b36; border-radius: 8px;
-    padding: 0.75rem 1rem; height: 340px; overflow-y: auto; white-space: pre-wrap;
-    max-width: 1100px; font-size: 0.82rem; margin: 0;
+    background: #05070a; border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.85rem 1rem; height: 400px; overflow-y: auto; white-space: pre-wrap;
+    max-width: 1200px; font-size: 0.8rem; margin: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   }
-  .log-line { }
-  .log-line.warn { color: #e0c46c; }
-  .log-line.error { color: #e08f8f; }
-  .log-line .ts { color: #566072; }
-  .log-line .scope { color: #6cb6ff; }
-  #log-status { font-size: 0.78rem; color: #8a93a3; margin-bottom: 0.35rem; }
-  .note { color: #8a93a3; font-size: 0.85em; margin-top: 0.5rem; max-width: 900px; }
-  code { background: #1c2028; padding: 0 0.3rem; border-radius: 3px; }
+  .log-line { padding: 0.15rem 0; }
+  .log-line.warn { color: var(--accent-yellow); }
+  .log-line.error { color: var(--accent-red); }
+  .log-line .ts { color: #404854; }
+  .log-line .scope { color: var(--accent-blue); }
+
+  .app-footer {
+    border-top: 1px solid var(--border);
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+  }
+  .note { color: var(--text-muted); font-size: 0.78rem; margin: 0.5rem 0; max-width: 900px; }
+  code { background: var(--surface); border: 1px solid var(--border); padding: 0.1rem 0.4rem; border-radius: 3px; }
 </style>
 </head>
 <body>
-  <h1>Conditional Payment Agent — Dashboard</h1>
+  <header class="app-header">
+    <h1>Conditional Payment Agent<span class="live-badge">LIVE</span></h1>
+    <p class="subtitle">Unicity Testnet v2 · Track 01 — Autonomous Agents</p>
+  </header>
 
   <div id="identity">Loading agent identity…</div>
 
@@ -82,15 +186,19 @@ export const DASHBOARD_HTML = `<!doctype html>
     <tbody id="rules-body"><tr><td colspan="7">Loading…</td></tr></tbody>
   </table>
 
-  <h2>Live activity log</h2>
-  <div id="log-status">connecting…</div>
+  <div class="log-header">
+    <h2>Live activity log</h2>
+    <span id="log-status">connecting…</span>
+  </div>
   <pre id="log-panel"></pre>
 
-  <p class="note">
-    This dashboard only reads agent state and flips the enabled/disabled bit on existing rules —
-    it cannot create rules, move funds, or reveal wallet secrets (mnemonic / oracle API key are
-    never sent to this page).
-  </p>
+  <footer class="app-footer">
+    <p class="note">
+      This dashboard only reads agent state and flips the enabled/disabled bit on existing rules —
+      it cannot create rules, move funds, or reveal wallet secrets (mnemonic / oracle API key are
+      never sent to this page).
+    </p>
+  </footer>
 
 <script>
 (function () {
